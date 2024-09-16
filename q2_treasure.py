@@ -49,34 +49,52 @@ def modify_image(file_path):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-# Example usage
+# Example for Chapter1.jpg
 red_pixel_sum = modify_image('/content/drive/MyDrive/HIT137/chapter1.jpg')
 print(red_pixel_sum)
 
 # Chapter 2: The Chamber of Strings
 
-def process_string(s):
-    if len(s) < 16:
+def process_string(long_str):
+    if len(long_str) < 16:
         raise ValueError("String must be at least 16 characters long")
 
-    number_string = ''.join(filter(str.isdigit, s))
-    letter_string = ''.join(filter(str.isalpha, s))
+    # Separate numbers and letters
+    number_string = ''.join(filter(str.isdigit, long_str))
+    print("Number String: " + number_string)
 
-    if not number_string or not any(char.isupper() for char in letter_string):
-        raise ValueError("String must contain both numbers and uppercase letters.")
+    letter_string = ''.join(filter(str.isalpha, long_str))
+    print("Letter String: " + letter_string + "\n")
 
-    # Convert digits in number_string to their ASCII decimal values
-    ascii_values = [str(ord(char)) for char in number_string]
+    # Separate Even Numbers and Convert to their ASCII values
+    even_num_string = ""
+    ascii_numbers = []
+    for num in number_string:
+      if int(num) % 2 == 0:
+        even_num_string += num + " "
+        ascii_numbers += [str(ord(num))]
 
-    # Convert uppercase letters in letter_string to their ASCII decimal values
+    print("Even Numbers: " + even_num_string)
+    print("ASCII Values of Even Numbers: " + str(ascii_numbers) + "\n")
+
+    # Separate Upper-case letters and Convert to their ASCII values
+    upper_string = ""
+    ascii_upper = []
+    for letter in letter_string:
+      if letter.isupper():
+        upper_string += letter + " "
+        ascii_upper += [str(ord(letter))]
+
+    print("Upper Case Letters: " + upper_string)
+    print("ASCII Values of Upper Case Letters: " + str(ascii_upper) + "\n")
     ascii_uppercase = [str(ord(char)) for char in letter_string if char.isupper()]
 
-    return ' '.join(ascii_values + ascii_uppercase)
+    return ascii_numbers + ascii_uppercase
 
-# Example usage
+# Example for converting Even numbers and Upper-case letters into ASCII values from the long string
 try:
-    s = "a12bc34d56ef78gh90iJ"
-    result = process_string(s)
-    print(result)
+    input_string = "56aAww1984sktr235270aYmn145ss785fsq31D0"
+    result = process_string(input_string)
+    print("The Result: " + str(result))
 except Exception as e:
     print(e)
