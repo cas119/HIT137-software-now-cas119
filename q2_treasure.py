@@ -52,3 +52,31 @@ def modify_image(file_path):
 # Example usage
 red_pixel_sum = modify_image('/content/drive/MyDrive/HIT137/chapter1.jpg')
 print(red_pixel_sum)
+
+# Chapter 2: The Chamber of Strings
+
+def process_string(s):
+    if len(s) < 16:
+        raise ValueError("String must be at least 16 characters long")
+
+    number_string = ''.join(filter(str.isdigit, s))
+    letter_string = ''.join(filter(str.isalpha, s))
+
+    if not number_string or not any(char.isupper() for char in letter_string):
+        raise ValueError("String must contain both numbers and uppercase letters.")
+
+    # Convert digits in number_string to their ASCII decimal values
+    ascii_values = [str(ord(char)) for char in number_string]
+
+    # Convert uppercase letters in letter_string to their ASCII decimal values
+    ascii_uppercase = [str(ord(char)) for char in letter_string if char.isupper()]
+
+    return ' '.join(ascii_values + ascii_uppercase)
+
+# Example usage
+try:
+    s = "a12bc34d56ef78gh90iJ"
+    result = process_string(s)
+    print(result)
+except Exception as e:
+    print(e)
