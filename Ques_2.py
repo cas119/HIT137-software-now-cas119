@@ -106,9 +106,8 @@ def decipher_cryptogram(text, shift):
     return ''.join(decrypted_text)
 
 
-# Decrypt the given cryptogram and Find out the original quote with the shift key
 def main():
-    '''Main function'''    
+    '''Main function'''
     # Chapter 1: Example for Chapter1.jpg
     print("Chapter 1:")
     red_pixel_sum = modify_image('C:\\Users\\synth\\OneDrive\\Documents\\HIT137\\chapter1.jpg')
@@ -123,7 +122,7 @@ def main():
     except Exception as e:
         print(e)
 
-    # Chapter 3: Decipher Cryptogram and Find Original Quote and Shift Key
+    # Chapter 3: Decrypt the given cryptogram and Find out the original quote with the shift key
     print("\nChapter 3:")
     try:
         cipher_text = "VZ FRYSVFU VZCNGVRAG NAQ N YVGGYR VAFRPHER V ZNXR ZVFGNXRF V NZ BHG BS PBAGEBY NAQ NG GVZRF UNEQ GB UNAQYR OHG VS LBH PNAG UNAQYR ZR NG ZL JBEFG GURA LBH FHER NF URYY QBAG QRFREIR ZR NG ZL ORFG ZNEVYLA ZBAEBR"
