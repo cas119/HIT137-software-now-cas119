@@ -295,6 +295,26 @@ class EntityAnalyzer:
             f.write(f"Total diseases detected (spaCy): {results['total_spacy_diseases']}\n")
             f.write(f"Total drugs detected (spaCy): {results['total_spacy_drugs']}\n")
 
+        with open(os.path.join(spacy_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
+            for disease, count in results['most_common_spacy_diseases']:
+                f.write(f"{disease}: {count}\n")
+
+        with open(os.path.join(spacy_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
+            for drug, count in results['most_common_spacy_drugs']:
+                f.write(f"{drug}: {count}\n")
+
+        # Save BioBERT results
+        with open(os.path.join(biobert_folder, 'total_entities.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"Total diseases detected (BioBERT): {results['total_biobert_diseases']}\n")
+            f.write(f"Total drugs detected (BioBERT): {results['total_biobert_drugs']}\n")
+
+        with open(os.path.join(biobert_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
+            for disease, count in results['most_common_biobert_diseases']:
+                f.write(f"{disease}: {count}\n")
+
+        with open(os.path.join(biobert_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
+            for drug, count in results['most_common_biobert_drugs']:
+                f.write(f"{drug}: {count}\n")
 
     def compare_and_save_results(self, results, results_directory):
         """Compare results from spaCy and BioBERT and save the comparison to a file."""
