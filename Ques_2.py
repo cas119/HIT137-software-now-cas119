@@ -1,9 +1,12 @@
 '''Question 2 - Solved By Synthia Islam'''
+# Github Link: https://github.com/cas119/HIT137-software-now-cas119
+
 # -*- coding: utf-8 -*-
 
 # pip install Pillow
 
 # Chapter 1: The Gatekeeper
+
 
 import time
 from PIL import Image
