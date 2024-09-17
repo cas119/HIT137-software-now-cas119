@@ -83,3 +83,51 @@ print("Installing...")
 # !pip install transformers
 print("Done.")
 
+"""# Task 3.1: Count the Top 30 most common words"""
+
+from collections import Counter
+import csv
+
+class WordAnalyzer:
+    def __init__(self, file_path, chunk_size=1024*1024, word_number=30):
+        self.file_path = file_path
+        self.chunk_size = chunk_size
+        self.word_number = word_number
+
+    def count_words(self):
+        """Count the occurrences of words in the file."""
+        word_counter = Counter()
+
+        with open(self.file_path, 'r', encoding='utf-8') as infile:
+            while True:
+                chunk = infile.read(self.chunk_size)
+                if not chunk:
+                    break
+
+                # Process chunk
+                words = chunk.split()
+                word_counter.update(words)
+
+        return word_counter.most_common(self.word_number)
+
+    @staticmethod
+    def save_to_csv(top_words, output_csv_path):
+        """Save the top words and their counts to a CSV file."""
+        with open(output_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Word', 'Count'])
+            writer.writerows(top_words)
+
+    def process(self, output_csv_path):
+        """Run the word count and save the results to a CSV file."""
+        top_words = self.count_words()
+        self.save_to_csv(top_words, output_csv_path)
+
+
+file_path = './output/combined_texts.txt'
+output_csv_path = './output/top_30_words.csv'
+
+analyzer = WordAnalyzer(file_path)
+analyzer.process(output_csv_path)
+pd.read_csv('./output/top_30_words.csv').head(5)
+
