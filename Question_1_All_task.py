@@ -295,28 +295,48 @@ class EntityAnalyzer:
             f.write(f"Total diseases detected (spaCy): {results['total_spacy_diseases']}\n")
             f.write(f"Total drugs detected (spaCy): {results['total_spacy_drugs']}\n")
 
-        with open(os.path.join(spacy_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
-            for disease, count in results['most_common_spacy_diseases']:
-                f.write(f"{disease}: {count}\n")
 
-        with open(os.path.join(spacy_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
-            for drug, count in results['most_common_spacy_drugs']:
-                f.write(f"{drug}: {count}\n")
+    def compare_and_save_results(self, results, results_directory):
+        """Compare results from spaCy and BioBERT and save the comparison to a file."""
+        comparison_diseases = defaultdict(lambda: {'spaCy_count': 0, 'BioBERT_count': 0})
+        comparison_drugs = defaultdict(lambda: {'spaCy_count': 0, 'BioBERT_count': 0})
 
-        # Save BioBERT results
-        with open(os.path.join(biobert_folder, 'total_entities.txt'), 'w', encoding='utf-8') as f:
-            f.write(f"Total diseases detected (BioBERT): {results['total_biobert_diseases']}\n")
-            f.write(f"Total drugs detected (BioBERT): {results['total_biobert_drugs']}\n")
+        # Update comparison dictionaries with results from spaCy
+        for disease, count in self.spacy_diseases.items():
+            comparison_diseases[disease]['spaCy_count'] = count
 
-        with open(os.path.join(biobert_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
-            for disease, count in results['most_common_biobert_diseases']:
-                f.write(f"{disease}: {count}\n")
+        for drug, count in self.spacy_drugs.items():
+            comparison_drugs[drug]['spaCy_count'] = count
 
-        with open(os.path.join(biobert_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
-            for drug, count in results['most_common_biobert_drugs']:
-                f.write(f"{drug}: {count}\n")
+        # Update comparison dictionaries with results from BioBERT
+        for disease, count in self.biobert_diseases.items():
+            comparison_diseases[disease]['BioBERT_count'] = count
 
+        for drug, count in self.biobert_drugs.items():
+            comparison_drugs[drug]['BioBERT_count'] = count
 
+        # Save comparison results
+        comparison_folder = os.path.join(results_directory, "Comparison")
+        os.makedirs(comparison_folder, exist_ok=True)
+
+        with open(os.path.join(comparison_folder, 'disease_comparison.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"{'Disease':<30} {'spaCy Count':<15} {'BioBERT Count':<15}\n")
+            f.write("="*60 + "\n")
+            for disease, counts in comparison_diseases.items():
+                f.write(f"{disease:<30} {counts['spaCy_count']:<15} {counts['BioBERT_count']:<15}\n")
+
+        with open(os.path.join(comparison_folder, 'drug_comparison.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"{'Drug':<30} {'spaCy Count':<15} {'BioBERT Count':<15}\n")
+            f.write("="*60 + "\n")
+            for drug, counts in comparison_drugs.items():
+                f.write(f"{drug:<30} {counts['spaCy_count']:<15} {counts['BioBERT_count']:<15}\n")
+
+    def run(self, results_directory):
+        """Run the analysis and save results."""
+        self.process_text_file()
+        results = self.get_results()
+        self.save_results_to_files(results, results_directory)
+        self.compare_and_save_results(results, results_directory)
 
 # Example usage
 file_path = './output/combined_texts.txt'
