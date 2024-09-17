@@ -181,3 +181,146 @@ output_csv_path = './output/top_30_tokens.csv'
 analyzer = TokenAnalyzer(file_path)
 analyzer.process(output_csv_path)
 pd.read_csv('./output/top_30_tokens.csv').head(5)
+
+
+
+"""# Task 4: Named-Entity Recognition (NER)
+
+***SciSpacy &
+en_ner_bc5cdr_md***
+
+***BioBert***
+"""
+
+import spacy
+import torch
+from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
+from collections import Counter, defaultdict
+import os
+
+class EntityAnalyzer:
+    def __init__(self, file_path, chunk_size=1000000):
+        self.file_path = file_path
+        self.chunk_size = chunk_size
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        # Load spaCy model
+        self.spacy_model_name = "en_ner_bc5cdr_md"
+        self.nlp = spacy.load(self.spacy_model_name)
+
+        # Load BioBERT model and tokenizer for disease NER
+        self.biobert_model_disease = AutoModelForTokenClassification.from_pretrained("ugaray96/biobert_ncbi_disease_ner").to(self.device)
+        self.biobert_tokenizer_disease = AutoTokenizer.from_pretrained("ugaray96/biobert_ncbi_disease_ner")
+
+        # Load ClinicalNER-PT model and tokenizer for drug NER
+        self.drug_model = AutoModelForTokenClassification.from_pretrained("pucpr/clinicalnerpt-chemical").to(self.device)
+        self.drug_tokenizer = AutoTokenizer.from_pretrained("pucpr/clinicalnerpt-chemical")
+
+        # Initialize NER pipelines for both disease and drug models
+        self.biobert_ner_disease = pipeline("ner", model=self.biobert_model_disease, tokenizer=self.biobert_tokenizer_disease, device=0 if torch.cuda.is_available() else -1)
+        self.drug_ner = pipeline("ner", model=self.drug_model, tokenizer=self.drug_tokenizer, device=0 if torch.cuda.is_available() else -1)
+
+        self.spacy_diseases = {}
+        self.spacy_drugs = {}
+        self.biobert_diseases = {}
+        self.biobert_drugs = {}
+
+    def _process_text_with_spacy(self, text_chunk):
+        """Process a text chunk with spaCy to extract diseases and drugs."""
+        doc = self.nlp(text_chunk)
+        for ent in doc.ents:
+            if ent.label_ == "DISEASE":
+                self.spacy_diseases[ent.text] = self.spacy_diseases.get(ent.text, 0) + 1
+            elif ent.label_ == "CHEMICAL":
+                self.spacy_drugs[ent.text] = self.spacy_drugs.get(ent.text, 0) + 1
+
+    def _process_text_with_biobert(self, text_chunk):
+        """Process a text chunk with BioBERT to extract diseases and drugs."""
+        biobert_entities_disease = self.biobert_ner_disease(text_chunk)
+        for ent in biobert_entities_disease:
+            if ent['entity'] == "Disease":
+                self.biobert_diseases[ent['word']] = self.biobert_diseases.get(ent['word'], 0) + 1
+
+        drug_entities = self.drug_ner(text_chunk)
+        for ent in drug_entities:
+            if ent['entity'] in ["B-ChemicalDrugs", "I-ChemicalDrugs"]:
+                self.biobert_drugs[ent['word']] = self.biobert_drugs.get(ent['word'], 0) + 1
+
+    def process_text_file(self):
+        """Read the text file in chunks and process it with both spaCy and BioBERT models."""
+        with open(self.file_path, 'r', encoding='utf-8') as infile:
+            while True:
+                chunk = infile.read(self.chunk_size)
+                if not chunk:
+                    break
+                chunk = chunk.strip()
+                if chunk:
+                    self._process_text_with_spacy(chunk)
+                    self._process_text_with_biobert(chunk)
+                break #Used To Reduce Time....Just Comment this line#
+    def get_results(self):
+        """Get total counts and most common entities from both models."""
+        total_spacy_diseases = len(self.spacy_diseases)
+        total_spacy_drugs = len(self.spacy_drugs)
+        most_common_spacy_diseases = Counter(self.spacy_diseases).most_common(10)
+        most_common_spacy_drugs = Counter(self.spacy_drugs).most_common(10)
+
+        total_biobert_diseases = len(self.biobert_diseases)
+        total_biobert_drugs = len(self.biobert_drugs)
+        most_common_biobert_diseases = Counter(self.biobert_diseases).most_common(10)
+        most_common_biobert_drugs = Counter(self.biobert_drugs).most_common(10)
+
+        return {
+            "total_spacy_diseases": total_spacy_diseases,
+            "most_common_spacy_diseases": most_common_spacy_diseases,
+            "total_spacy_drugs": total_spacy_drugs,
+            "most_common_spacy_drugs": most_common_spacy_drugs,
+            "total_biobert_diseases": total_biobert_diseases,
+            "most_common_biobert_diseases": most_common_biobert_diseases,
+            "total_biobert_drugs": total_biobert_drugs,
+            "most_common_biobert_drugs": most_common_biobert_drugs
+        }
+
+    @staticmethod
+    def save_results_to_files(results, results_directory):
+        """Save the results to text files in the specified directory."""
+        # Create subfolders for the results
+        spacy_folder = os.path.join(results_directory, "SciSpacy", "en_ner_bc5cdr_md")
+        biobert_folder = os.path.join(results_directory, "BioBERT")
+        os.makedirs(spacy_folder, exist_ok=True)
+        os.makedirs(biobert_folder, exist_ok=True)
+
+        # Save spaCy results
+        with open(os.path.join(spacy_folder, 'total_entities.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"Total diseases detected (spaCy): {results['total_spacy_diseases']}\n")
+            f.write(f"Total drugs detected (spaCy): {results['total_spacy_drugs']}\n")
+
+        with open(os.path.join(spacy_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
+            for disease, count in results['most_common_spacy_diseases']:
+                f.write(f"{disease}: {count}\n")
+
+        with open(os.path.join(spacy_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
+            for drug, count in results['most_common_spacy_drugs']:
+                f.write(f"{drug}: {count}\n")
+
+        # Save BioBERT results
+        with open(os.path.join(biobert_folder, 'total_entities.txt'), 'w', encoding='utf-8') as f:
+            f.write(f"Total diseases detected (BioBERT): {results['total_biobert_diseases']}\n")
+            f.write(f"Total drugs detected (BioBERT): {results['total_biobert_drugs']}\n")
+
+        with open(os.path.join(biobert_folder, 'most_common_diseases.txt'), 'w', encoding='utf-8') as f:
+            for disease, count in results['most_common_biobert_diseases']:
+                f.write(f"{disease}: {count}\n")
+
+        with open(os.path.join(biobert_folder, 'most_common_drugs.txt'), 'w', encoding='utf-8') as f:
+            for drug, count in results['most_common_biobert_drugs']:
+                f.write(f"{drug}: {count}\n")
+
+
+
+# Example usage
+file_path = './output/combined_texts.txt'
+results_directory = './output/entity_analysis_results'
+
+analyzer = EntityAnalyzer(file_path)
+analyzer.run(results_directory)
