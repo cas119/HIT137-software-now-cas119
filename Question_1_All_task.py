@@ -103,6 +103,7 @@ processor = TextProcessor(output_directory, output_file)
 dfs = processor.extract_csv_to_dataframe()
 processor.process_texts(dfs)
 
+
 # Task 2: Install the necessary libraries
 
 print("Installing...")
@@ -113,8 +114,8 @@ print("Installing...")
 # !pip install transformers
 print("Done.")
 
-# Task 3.1: Count the Top 30 most common words
 
+# Task 3.1: Count the Top 30 most common words
 
 class WordAnalyzer:
     '''Word Analyzer Class'''
@@ -131,11 +132,13 @@ class WordAnalyzer:
             while True:
                 chunk = infile.read(self.chunk_size)
                 if not chunk:
+                    print("No chunk is remaining!")
                     break
 
                 # Process chunk
                 words = chunk.split()
                 word_counter.update(words)
+                print("Word chunk is processing...")
 
         return word_counter.most_common(self.word_number)
 
@@ -146,6 +149,7 @@ class WordAnalyzer:
             writer = csv.writer(csvfile)
             writer.writerow(['Word', 'Count'])
             writer.writerows(top_words)
+        print("Top words and their counts are saved to 'top_30_words.csv' file!")
 
     def process(self, output_csv_path):
         """Run the word count and save the results to a CSV file."""
@@ -180,11 +184,13 @@ class TokenAnalyzer:
             while True:
                 chunk = infile.read(self.chunk_size)
                 if not chunk:
+                    print("No chunk is remaining!")
                     break
 
                 # Process chunk
                 tokens = self.tokenizer.tokenize(chunk)
                 token_counts.update(tokens)
+                print("Token chunks are being updated!")
 
         return token_counts.most_common(self.token_number)
 
@@ -195,6 +201,7 @@ class TokenAnalyzer:
             writer = csv.writer(csvfile)
             writer.writerow(['Token', 'Count'])
             writer.writerows(top_tokens)
+        print("Top tokens and their counts are saved to 'top_30_tokens.csv' file!")
 
     def process(self, output_csv_path):
         """Run the token count and save the results to a CSV file."""
