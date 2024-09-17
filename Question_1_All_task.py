@@ -131,3 +131,53 @@ analyzer = WordAnalyzer(file_path)
 analyzer.process(output_csv_path)
 pd.read_csv('./output/top_30_words.csv').head(5)
 
+
+"""# Task 3.2: Use AutoTokenizer from transformers and Count 30 most common tokens"""
+
+from transformers import AutoTokenizer
+from collections import Counter
+import csv
+
+class TokenAnalyzer:
+    def __init__(self, file_path, tokenizer_name="bert-base-uncased", chunk_size=512, token_number=30):
+        self.file_path = file_path
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_name, clean_up_tokenization_spaces=True)
+        self.chunk_size = chunk_size
+        self.token_number = token_number
+
+    def count_tokens(self):
+        """Count the occurrences of tokens in the file."""
+        token_counts = Counter()
+
+        with open(self.file_path, 'r', encoding='utf-8') as infile:
+            while True:
+                chunk = infile.read(self.chunk_size)
+                if not chunk:
+                    break
+
+                # Process chunk
+                tokens = self.tokenizer.tokenize(chunk)
+                token_counts.update(tokens)
+
+        return token_counts.most_common(self.token_number)
+
+    @staticmethod
+    def save_to_csv(top_tokens, output_csv_path):
+        """Save the top tokens and their counts to a CSV file."""
+        with open(output_csv_path, 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow(['Token', 'Count'])
+            writer.writerows(top_tokens)
+
+    def process(self, output_csv_path):
+        """Run the token count and save the results to a CSV file."""
+        top_tokens = self.count_tokens()
+        self.save_to_csv(top_tokens, output_csv_path)
+
+
+file_path = './output/combined_texts.txt'
+output_csv_path = './output/top_30_tokens.csv'
+
+analyzer = TokenAnalyzer(file_path)
+analyzer.process(output_csv_path)
+pd.read_csv('./output/top_30_tokens.csv').head(5)
