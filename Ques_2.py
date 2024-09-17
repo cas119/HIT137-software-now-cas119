@@ -1,12 +1,12 @@
-'''Question 2'''
+'''Question 2 - Solved By Synthia Islam'''
 # -*- coding: utf-8 -*-
 
 # pip install Pillow
 
 # Chapter 1: The Gatekeeper
 
-from PIL import Image
 import time
+from PIL import Image
 
 
 def modify_image(file_path):
@@ -32,7 +32,7 @@ def modify_image(file_path):
                                 (b + generated_number) % 256)
 
         # Save the new image
-        img.save('C:\\Users\\synth\\OneDrive\\Documents\\HIT137\\chapter1out.png')
+        img.save('./chapter1out.png')
 
         # Calculate the sum of the red pixel values
         red_sum = sum(pixels[i, j][0] for i in range(img.width) for j in range(img.height))
@@ -111,7 +111,8 @@ def main():
     '''Main function'''
     # Chapter 1: Example for Chapter1.jpg
     print("Chapter 1:")
-    red_pixel_sum = modify_image('C:\\Users\\synth\\OneDrive\\Documents\\HIT137\\chapter1.jpg')
+
+    red_pixel_sum = modify_image('./chapter1.jpg')
     print(red_pixel_sum)
 
     # Chapter 2: Example for Separating Upper-case letters and Converting to their ASCII values
