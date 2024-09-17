@@ -1,3 +1,4 @@
+'''Question 2'''
 # -*- coding: utf-8 -*-
 
 # pip install Pillow
