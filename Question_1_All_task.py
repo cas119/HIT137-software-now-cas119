@@ -18,7 +18,6 @@ from collections import Counter, defaultdict
 
 # Task 1: Extract the text from multiple CSV files
 
-
 class TextProcessor:
     '''Text Processor Class'''
     def __init__(self, output_directory, output_file, chunk_size=1024*1024):
@@ -50,7 +49,7 @@ class TextProcessor:
                 file_path = os.path.join(current_directory, item)
                 print(f"Reading {item}...")
                 df = pd.read_csv(file_path)
-                dfs.append(df)
+                dfs.append((df, item))
 
         if not dfs:
             print("No CSV files found in the current directory.")
@@ -70,10 +69,16 @@ class TextProcessor:
     @staticmethod
     def extract_and_clean_texts(dfs):
         """Extract and clean texts from a list of DataFrames and return a generator of cleaned texts."""
-        for df in dfs:
-            if 'TEXT' in df.columns:
-                for text in df['TEXT'].dropna():
+        for df, filename in dfs:  # Adjusted to unpack tuple
+            # Identify columns containing 'TEXT' regardless of case
+            text_column = next((col for col in df.columns if 'TEXT' in col.upper()), None)
+
+            if text_column is not None:
+                print(f"Extracting texts from '{text_column}' column in {filename}...")
+                for text in df[text_column].dropna():
                     yield TextProcessor.clean_text(text)
+            else:
+                print(f"No column name containing 'TEXT' found in {file_path}")
 
     @staticmethod
     def clean_text(text):
