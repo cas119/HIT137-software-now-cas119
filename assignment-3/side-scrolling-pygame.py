@@ -12,6 +12,7 @@ BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
+BLUE = (0, 0, 255)
 FPS = 60
 
 # Create the screen object
@@ -89,7 +90,7 @@ class Projectile(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, level):
         super().__init__()
-        size = 40 if level == 1 else 60  # Enemies are bigger in level 2
+        size = 40 if level == 1 else 60 if level == 2 else 80  # Enemies are bigger in each level
         self.image = pygame.Surface((size, size))
         self.image.fill(RED if level < 3 else YELLOW)  # Boss is yellow in level 3
         self.rect = self.image.get_rect()
@@ -102,16 +103,33 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.x -= self.speed_x
         if self.rect.right < 0:
             self.kill()
-            # Score for the player if the enemy passes
-            player.score += 5
 
     def take_damage(self, amount):
         self.health -= amount
         if self.health <= 0:
             self.kill()
-            player.score += 10  # Increase score
+            player.score += 10  # Increase score only when enemy is killed
             global enemies_killed
             enemies_killed += 1  # Track enemies killed
+
+# Collectible class (with blue color and movement like enemies)
+class Collectible(pygame.sprite.Sprite):
+    def __init__(self, collectible_type):
+        super().__init__()
+        self.collectible_type = collectible_type
+
+        # Define collectible properties based on type
+        self.image = pygame.Surface((20, 20))
+        self.image.fill(BLUE)  # Blue color for collectibles
+        self.rect = self.image.get_rect()
+        self.rect.x = SCREEN_WIDTH
+        self.rect.y = random.randint(50, SCREEN_HEIGHT - 50)
+        self.speed_x = 4  # Speed of the collectible
+
+    def update(self):
+        self.rect.x -= self.speed_x
+        if self.rect.right < 0:
+            self.kill()
 
 # Game over screen
 def game_over():
@@ -138,12 +156,20 @@ def level_complete(level):
     pygame.display.flip()
     wait_for_key(level_complete=True, auto_proceed=True)
 
-# Level start screen (with 20ms wait)
+# Level start screen (with 600ms wait)
 def level_start(level):
     screen.fill(BLACK)
     draw_text(screen, f"Level {level}", 64, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
     pygame.display.flip()
     pygame.time.wait(600)  # Automatically move to the game after 600 milliseconds
+
+# Spawning Collectibles (limit 2-4 on screen)
+def spawn_collectible():
+    if len(collectibles) < 4:  # Ensure there are not more than 4 collectibles on the screen
+        collectible_type = random.choice(['health', 'life'])
+        collectible = Collectible(collectible_type)
+        all_sprites.add(collectible)
+        collectibles.add(collectible)
 
 # Wait for key press or automatically proceed after delay
 def wait_for_key(game_over=False, level_complete=False, auto_proceed=False):
@@ -156,9 +182,12 @@ def wait_for_key(game_over=False, level_complete=False, auto_proceed=False):
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYUP and event.key == pygame.K_q:
-                pygame.quit()
-                exit()
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    exit()
+                if event.key == pygame.K_r and game_over:
+                    game_loop()  # Restart game loop on 'R'
 
         # If auto_proceed is enabled, move to the next level after 2 seconds
         if auto_proceed and pygame.time.get_ticks() - start_time > 2000:
@@ -166,12 +195,13 @@ def wait_for_key(game_over=False, level_complete=False, auto_proceed=False):
 
 # Main game loop
 def game_loop():
-    global player, all_sprites, projectiles, enemies, level, enemy_count, enemies_killed
+    global player, all_sprites, projectiles, enemies, collectibles, level, enemy_count, enemies_killed
     level = 1
     player = Player()
     all_sprites = pygame.sprite.Group()
     projectiles = pygame.sprite.Group()
     enemies = pygame.sprite.Group()
+    collectibles = pygame.sprite.Group()  # Group for collectibles
 
     all_sprites.add(player)
     enemies_killed = 0
@@ -187,12 +217,11 @@ def game_loop():
         all_sprites.empty()
         projectiles.empty()
         enemies.empty()
+        collectibles.empty()  # Clear any remaining collectibles
         all_sprites.add(player)
 
-        # Show the level start message
         level_start(new_level)
 
-    # Start level 1
     start_new_level(level)
 
     while running:
@@ -206,6 +235,20 @@ def game_loop():
 
         # Update game objects
         all_sprites.update()
+
+        # Check for collectible collection
+        hits = pygame.sprite.spritecollide(player, collectibles, True)  # Collectibles disappear on collection
+        for hit in hits:
+            if hit.collectible_type == 'health':
+                player.health = min(player.health + 20, 100)  # Cap health at 100
+            elif hit.collectible_type == 'life':
+                player.lives += 1  # Add an extra life
+
+        # Randomly spawn a collectible after killing 2 enemies in level 1, or 1 enemy in level 2
+        if level == 1 and enemies_killed == 2:
+            spawn_collectible()
+        elif level == 2 and enemies_killed == 1:
+            spawn_collectible()
 
         # Spawn enemies based on level
         if level < 3:  # Normal enemies for level 1 and 2
@@ -245,13 +288,13 @@ def game_loop():
         pygame.display.flip()  # Ensure screen updates
 
         # Level completion logic with a brief delay after the last enemy is killed
-        if level == 1 and enemies_killed >= 4:
+        if level == 1 and enemies_killed >= 5:
             pygame.time.wait(500)  # Short delay to show the last enemy being killed
             level_complete(level)
             level += 1
             start_new_level(level)
 
-        elif level == 2 and enemies_killed >= 2:
+        elif level == 2 and enemies_killed >= 3:
             pygame.time.wait(500)  # Short delay to show the last enemy being killed
             level_complete(level)
             level += 1
