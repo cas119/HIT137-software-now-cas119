@@ -89,7 +89,7 @@ class Projectile(pygame.sprite.Sprite):
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, level):
         super().__init__()
-        size = 40 if level == 1 else 60 if level == 2 else 80  # Enemies are bigger in each level
+        size = 40 if level == 1 else 60  # Enemies are bigger in level 2
         self.image = pygame.Surface((size, size))
         self.image.fill(RED if level < 3 else YELLOW)  # Boss is yellow in level 3
         self.rect = self.image.get_rect()
@@ -134,34 +134,35 @@ def level_complete(level):
     pygame.event.clear()  # Clear event queue to prevent extra keypresses
     screen.fill(BLACK)
     draw_text(screen, f"Level {level} Complete!", 64, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
-    draw_text(screen, "Press N to go to next level or Q to Quit", 22, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
+    draw_text(screen, "Press Q to Quit", 22, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
     pygame.display.flip()
-    wait_for_key(level_complete=True)
+    wait_for_key(level_complete=True, auto_proceed=True)
 
 # Level start screen (with 20ms wait)
 def level_start(level):
     screen.fill(BLACK)
     draw_text(screen, f"Level {level}", 64, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
     pygame.display.flip()
-    pygame.time.wait(600)  # Automatically move to the game after 700 ms
+    pygame.time.wait(600)  # Automatically move to the game after 600 milliseconds
 
-# Wait for key press
-def wait_for_key(game_over=False, level_complete=False):
+# Wait for key press or automatically proceed after delay
+def wait_for_key(game_over=False, level_complete=False, auto_proceed=False):
     pygame.event.clear()  # Clear any lingering events before waiting
     waiting = True
+    start_time = pygame.time.get_ticks()
+
     while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYUP:
-                if event.key == pygame.K_q:
-                    pygame.quit()
-                    exit()
-                if event.key == pygame.K_r and game_over:
-                    game_loop()  # Restart game loop on 'R'
-                if event.key == pygame.K_n and level_complete:
-                    waiting = False  # Move to the next level after pressing N
+            if event.type == pygame.KEYUP and event.key == pygame.K_q:
+                pygame.quit()
+                exit()
+
+        # If auto_proceed is enabled, move to the next level after 2 seconds
+        if auto_proceed and pygame.time.get_ticks() - start_time > 2000:
+            waiting = False
 
 # Main game loop
 def game_loop():
@@ -188,8 +189,10 @@ def game_loop():
         enemies.empty()
         all_sprites.add(player)
 
+        # Show the level start message
         level_start(new_level)
 
+    # Start level 1
     start_new_level(level)
 
     while running:
@@ -227,7 +230,7 @@ def game_loop():
         hits = pygame.sprite.spritecollide(player, enemies, False)
         for hit in hits:
             # Health reduction based on level
-            damage = 30 if level == 1 else 50 if level == 2 else 80
+            damage = 20 if level == 1 else 30 if level == 2 else 40
             player.take_damage(damage)
             hit.kill()  # Enemy disappears on collision
             enemy_count -= 1
@@ -245,38 +248,14 @@ def game_loop():
         if level == 1 and enemies_killed >= 4:
             pygame.time.wait(500)  # Short delay to show the last enemy being killed
             level_complete(level)
-            waiting_for_next_level = True
-            while waiting_for_next_level:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.KEYUP:
-                        if event.key == pygame.K_n:
-                            level += 1
-                            start_new_level(level)
-                            waiting_for_next_level = False
-                        elif event.key == pygame.K_q:
-                            pygame.quit()
-                            exit()
+            level += 1
+            start_new_level(level)
 
         elif level == 2 and enemies_killed >= 2:
             pygame.time.wait(500)  # Short delay to show the last enemy being killed
             level_complete(level)
-            waiting_for_next_level = True
-            while waiting_for_next_level:
-                for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-                    if event.type == pygame.KEYUP:
-                        if event.key == pygame.K_n:
-                            level += 1
-                            start_new_level(level)
-                            waiting_for_next_level = False
-                        elif event.key == pygame.K_q:
-                            pygame.quit()
-                            exit()
+            level += 1
+            start_new_level(level)
 
         elif level == 3 and enemies_killed >= 1:  # Boss defeated
             pygame.time.wait(500)  # Short delay to show the boss being killed
