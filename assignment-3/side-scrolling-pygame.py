@@ -13,6 +13,7 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 YELLOW = (255, 255, 0)
 BLUE = (0, 0, 255)
+ORANGE = (255, 165, 0)
 FPS = 60
 
 # Create the screen object
@@ -112,15 +113,20 @@ class Enemy(pygame.sprite.Sprite):
             global enemies_killed
             enemies_killed += 1  # Track enemies killed
 
-# Collectible class (with blue color and movement like enemies)
+# Collectible class (with blue and orange colors for life and health boosts)
 class Collectible(pygame.sprite.Sprite):
     def __init__(self, collectible_type):
         super().__init__()
         self.collectible_type = collectible_type
-
+        
         # Define collectible properties based on type
-        self.image = pygame.Surface((20, 20))
-        self.image.fill(BLUE)  # Blue color for collectibles
+        if self.collectible_type == 'health':
+            self.image = pygame.Surface((20, 20))
+            self.image.fill(ORANGE)  # Orange color for health boost
+        elif self.collectible_type == 'life':
+            self.image = pygame.Surface((20, 20))
+            self.image.fill(BLUE)  # Blue color for life boost
+        
         self.rect = self.image.get_rect()
         self.rect.x = SCREEN_WIDTH
         self.rect.y = random.randint(50, SCREEN_HEIGHT - 50)
@@ -164,9 +170,8 @@ def level_start(level):
     pygame.time.wait(600)  # Automatically move to the game after 600 milliseconds
 
 # Spawning Collectibles (limit 2-4 on screen)
-def spawn_collectible():
+def spawn_collectible(collectible_type):
     if len(collectibles) < 4:  # Ensure there are not more than 4 collectibles on the screen
-        collectible_type = random.choice(['health', 'life'])
         collectible = Collectible(collectible_type)
         all_sprites.add(collectible)
         collectibles.add(collectible)
@@ -206,14 +211,18 @@ def game_loop():
     all_sprites.add(player)
     enemies_killed = 0
     enemy_count = 0
+    health_collectible_spawned = False  # Track if health collectible has been spawned
+    life_collectible_spawned = False    # Track if life collectible has been spawned
 
     running = True
     clock = pygame.time.Clock()
 
     def start_new_level(new_level):
-        global enemies_killed, enemy_count
+        global enemies_killed, enemy_count, health_collectible_spawned, life_collectible_spawned
         enemies_killed = 0
         enemy_count = 0
+        health_collectible_spawned = False  # Reset collectible flags
+        life_collectible_spawned = False
         all_sprites.empty()
         projectiles.empty()
         enemies.empty()
@@ -244,11 +253,19 @@ def game_loop():
             elif hit.collectible_type == 'life':
                 player.lives += 1  # Add an extra life
 
-        # Randomly spawn a collectible after killing 2 enemies in level 1, or 1 enemy in level 2
-        if level == 1 and enemies_killed == 2:
-            spawn_collectible()
-        elif level == 2 and enemies_killed == 1:
-            spawn_collectible()
+        # Spawn a collectible only once in each level
+        if level == 1:
+            if enemies_killed == 2 and not health_collectible_spawned:
+                spawn_collectible('health')  # Spawn health booster (orange)
+                health_collectible_spawned = True  # Mark health collectible as spawned
+            if enemies_killed == 4 and not life_collectible_spawned:
+                spawn_collectible('life')  # Spawn life booster (blue)
+                life_collectible_spawned = True  # Mark life collectible as spawned
+
+        elif level == 2:
+            if enemies_killed == 1 and not life_collectible_spawned:
+                spawn_collectible('life')  # Spawn life booster (blue)
+                life_collectible_spawned = True  # Mark life collectible as spawned
 
         # Spawn enemies based on level
         if level < 3:  # Normal enemies for level 1 and 2
