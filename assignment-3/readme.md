@@ -1,7 +1,3 @@
-Here's a well-structured documentation for your translator app, detailing how to set it up, run it, and an explanation of how OOP (Object-Oriented Programming) is implemented in your code.
-
----
-
 # **Translator Application Documentation**
 
 ## **Overview**
