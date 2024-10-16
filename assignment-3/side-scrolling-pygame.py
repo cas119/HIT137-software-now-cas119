@@ -118,7 +118,7 @@ class Collectible(pygame.sprite.Sprite):
     def __init__(self, collectible_type):
         super().__init__()
         self.collectible_type = collectible_type
-        
+
         # Define collectible properties based on type
         if self.collectible_type == 'health':
             self.image = pygame.Surface((20, 20))
@@ -126,7 +126,7 @@ class Collectible(pygame.sprite.Sprite):
         elif self.collectible_type == 'life':
             self.image = pygame.Surface((20, 20))
             self.image.fill(BLUE)  # Blue color for life boost
-        
+
         self.rect = self.image.get_rect()
         self.rect.x = SCREEN_WIDTH
         self.rect.y = random.randint(50, SCREEN_HEIGHT - 50)
